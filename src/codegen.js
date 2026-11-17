@@ -10,7 +10,7 @@
  * (clipboard) and highlighted HTML (display) are both rendered from it.
  */
 import { describe } from "./animation.js";
-import { TARGET_SELECTOR } from "./config.js";
+import { TARGET_SELECTOR, HEADLINE_SELECTOR, MASK_ROOM } from "./config.js";
 
 const INDENT = "  ";
 
@@ -41,10 +41,15 @@ function printObject(obj, depth, out) {
   out.push(["txt", `\n${INDENT.repeat(depth)}`], ["pun", "}"]);
 }
 
-/** Print a call like  gsap.to(".box", { ... }, "-=0.2");  */
+/**
+ * Print a call like  gsap.to(".box", { ... }, "-=0.2");
+ * `target` is a selector string, or { raw: "split.words" } for a variable.
+ */
 function printCall(callee, target, vars, position, out) {
   out.push(["fn", callee], ["pun", "("]);
-  out.push(["str", `"${target}"`], ["pun", ", "]);
+  if (typeof target === "string") out.push(["str", `"${target}"`]);
+  else out.push(["txt", target.raw]);
+  out.push(["pun", ", "]);
   printObject(vars, 0, out);
   if (position) out.push(["pun", ", "], ["str", `"${position}"`]);
   out.push(["pun", ");"]);
@@ -54,14 +59,35 @@ function tokenize(state) {
   const animation = describe(state);
   const out = [];
 
-  if (animation.scroll) {
-    out.push(["fn", "gsap.registerPlugin"], ["pun", "("], ["txt", "ScrollTrigger"], ["pun", ");"]);
+  // Plugins first
+  const plugins = [animation.scroll && "ScrollTrigger", animation.split && "SplitText"].filter(Boolean);
+  if (plugins.length > 0) {
+    out.push(["fn", "gsap.registerPlugin"], ["pun", "("], ["txt", plugins.join(", ")], ["pun", ");"]);
     out.push(["txt", "\n\n"]);
+  }
+
+  // Text targets: split the headline, then animate the pieces
+  let target = TARGET_SELECTOR;
+  if (animation.split) {
+    const options = { type: animation.split.type };
+    if (animation.split.mask) options.mask = animation.split.mask;
+    out.push(["key", "const"], ["txt", " split "], ["pun", "= "], ["fn", "SplitText.create"], ["pun", "("]);
+    out.push(["str", `"${HEADLINE_SELECTOR}"`], ["pun", ", "]);
+    printObject(options, 0, out);
+    out.push(["pun", ");"], ["txt", "\n"]);
+    if (animation.split.mask) {
+      out.push(["com", "// room for descenders, so the masks don't clip g, y, p"], ["txt", "\n"]);
+      out.push(["fn", "gsap.set"], ["pun", "("], ["txt", "split.masks"], ["pun", ", "]);
+      printObject(MASK_ROOM, 0, out);
+      out.push(["pun", ");"], ["txt", "\n"]);
+    }
+    out.push(["txt", "\n"]);
+    target = { raw: `split.${animation.split.kind}` };
   }
 
   if (!animation.timeline) {
     const [step] = animation.steps;
-    printCall(`gsap.${step.method}`, TARGET_SELECTOR, step.vars, null, out);
+    printCall(`gsap.${step.method}`, target, step.vars, null, out);
     return out;
   }
 
@@ -72,7 +98,7 @@ function tokenize(state) {
 
   for (const step of animation.steps) {
     out.push(["txt", "\n"]);
-    printCall(`tl.${step.method}`, TARGET_SELECTOR, step.vars, step.position, out);
+    printCall(`tl.${step.method}`, target, step.vars, step.position, out);
   }
   return out;
 }

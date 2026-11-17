@@ -173,6 +173,19 @@
   will-change: transform, opacity;
 }
 
+/* Headline for the text targets (words, letters, lines) */
+.headline {
+  max-width: 15ch;
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(28px, 4.4vw, 60px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-align: center;
+  text-wrap: balance;
+}
+
 /* Thin progress line under the stage */
 .stage__progress {
   height: 2px;
@@ -212,6 +225,7 @@
 .code__pre .t-num { color: var(--code-number); }
 .code__pre .t-pun { color: var(--code-punct); }
 .code__pre .t-fn { color: var(--code-fn); }
+.code__pre .t-com { color: var(--text-faint); font-style: italic; }
 
 /* ---------- Footer ---------- */
 .footer {

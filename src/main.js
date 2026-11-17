@@ -50,6 +50,7 @@ const preview = createPreview({
   scroller: $("[data-scroller]"),
   subject: $("[data-subject]"),
   root: $("[data-boxes]"),
+  headline: $("[data-headline]"),
   progress: $("[data-progress]"),
   playButton: $('[data-action="play"]'),
   replayButton: $('[data-action="replay"]'),

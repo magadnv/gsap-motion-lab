@@ -24,6 +24,8 @@ import {
   SCROLL_START,
   SCROLL_END,
   SCROLL_SCRUB,
+  TARGETS,
+  MAX_TEXT_LENGTH,
   BASELINE_STEP,
   BASELINE_GLOBALS,
   INITIAL_STATE,
@@ -66,6 +68,13 @@ function applyGlobals(state, params) {
     if (value !== undefined) state[def.key] = value;
   }
   if (isOn(params.get("yoyo"))) state.yoyo = true;
+  if (TARGETS.some((t) => t.value === params.get("target"))) state.target = params.get("target");
+  if (isOn(params.get("mask"))) state.mask = true;
+  if (params.has("text")) {
+    // plain text only: drop control characters, cap the length
+    const text = params.get("text").replace(/[\u0000-\u001f\u007f]/g, "").slice(0, MAX_TEXT_LENGTH);
+    if (text.trim()) state.text = text;
+  }
   if (isOn(params.get("scroll"))) state.scroll = true;
   if (isOn(params.get("markers"))) state.markers = true;
   for (const [key, options] of Object.entries(CHOICES)) {
@@ -95,7 +104,13 @@ function encodeStep(step, isFirst) {
  * (both are allowed in a query string).
  */
 export function stateToQuery(state) {
-  const pairs = state.steps.map((step, i) => [`s${i + 1}`, encodeStep(step, i === 0)]);
+  const pairs = [];
+  if (state.target !== BASELINE_GLOBALS.target) {
+    pairs.push(["target", state.target]);
+    if (state.text.trim() && state.text !== BASELINE_GLOBALS.text) pairs.push(["text", state.text]);
+    if (state.mask) pairs.push(["mask", 1]);
+  }
+  state.steps.forEach((step, i) => pairs.push([`s${i + 1}`, encodeStep(step, i === 0)]));
 
   for (const def of GLOBAL_TIMING) {
     const value = clean(state[def.key]);

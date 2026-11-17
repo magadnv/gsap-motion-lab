@@ -108,8 +108,30 @@ export const SCROLL_END = ["bottom top", "bottom center", "bottom 20%", "+=300",
 /** "off" = play once on enter (toggleActions), anything else = scrub value. */
 export const SCROLL_SCRUB = ["off", "true", "0.5", "1", "2"];
 
+/**
+ * What gets animated. Text targets split a headline with GSAP's SplitText;
+ * "chars" splits words too, so letters never break across lines.
+ */
+export const TARGETS = [
+  { value: "boxes", label: "Boxes" },
+  { value: "words", label: "Words", split: "words" },
+  { value: "chars", label: "Letters", split: "words, chars" },
+  { value: "lines", label: "Lines", split: "lines" },
+];
+export const DEFAULT_TEXT = "Show everyone what's possible.";
+
+/**
+ * Masks clip at the line box, which cuts descenders (g, y, p).
+ * Padding plus an equal negative margin gives them room without moving the text.
+ */
+export const MASK_ROOM = { paddingBlock: "0.12em", marginBlock: "-0.12em" };
+export const MAX_TEXT_LENGTH = 80;
+
 /** Global values at GSAP's defaults (scroll off). */
 export const BASELINE_GLOBALS = Object.freeze({
+  target: "boxes",
+  text: DEFAULT_TEXT,
+  mask: false,
   delay: 0,
   repeat: 0,
   yoyo: false,
@@ -130,3 +152,4 @@ export const INITIAL_STATE = Object.freeze({
 /** Selectors the generated code uses. */
 export const TARGET_SELECTOR = ".box";
 export const TRIGGER_SELECTOR = ".boxes";
+export const HEADLINE_SELECTOR = ".headline";

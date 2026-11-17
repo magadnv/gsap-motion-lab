@@ -24,6 +24,8 @@ import {
   SCROLL_END,
   SCROLL_SCRUB,
   BASELINE_GLOBALS,
+  TARGETS,
+  MAX_TEXT_LENGTH,
 } from "./config.js";
 import { clean, isScrubbing } from "./animation.js";
 
@@ -162,19 +164,24 @@ function numberField(def, baseline, bind) {
   };
 }
 
-/** Segmented control (radio group), used for from / to. */
+/**
+ * Segmented control (radio group), used for from / to and the element type.
+ * Options are strings or { value, label }.
+ */
 function segmented(name, options, bind) {
   const group = h("div", { class: "segmented", role: "radiogroup", "aria-label": name });
+  group.style.gridTemplateColumns = `repeat(${options.length}, 1fr)`;
   const inputs = options.map((option) => {
+    const { value, label } = typeof option === "string" ? { value: option, label: option } : option;
     const input = h("input", {
       type: "radio",
       name,
-      value: option,
-      id: `ctl-${name}-${option}`,
+      value,
+      id: `ctl-${name}-${value}`,
       class: "segmented__input",
     });
-    input.addEventListener("change", () => bind.set(option));
-    group.append(input, h("label", { for: input.id, class: "segmented__option", text: option }));
+    input.addEventListener("change", () => bind.set(value));
+    group.append(input, h("label", { for: input.id, class: "segmented__option", text: label }));
     return input;
   });
 
@@ -219,6 +226,31 @@ function easeField(easeCurve, bind) {
         easeCurve.draw(ease);
         drawn = ease;
       }
+    },
+  };
+}
+
+/** Single-line text input (the headline text). */
+function textField(key, label, bind) {
+  const id = `ctl-${key}`;
+  const input = h("input", {
+    type: "text",
+    id,
+    class: "text__input",
+    maxlength: MAX_TEXT_LENGTH,
+    spellcheck: "false",
+  });
+  input.addEventListener("input", () => bind.set(input.value));
+
+  return {
+    el: h(
+      "div",
+      { class: "field field--text" },
+      h("label", { class: "field__label", for: id, text: label }),
+      input,
+    ),
+    sync(state) {
+      if (document.activeElement !== input) input.value = bind.get(state);
     },
   };
 }
@@ -381,7 +413,18 @@ export function createControls(form, { setState, updateStep, addStep, removeStep
     text: "offset: negative overlaps the previous step, positive waits.",
   });
 
+  // Element: boxes or a headline split into words / letters / lines
+  const textFields = [
+    textField("text", "text", globalBind("text")),
+    toggleField("mask", "mask", "each piece slides in from behind its edge", globalBind("mask")),
+  ];
+
   form.append(
+    section(
+      "Element",
+      add(segmented("target", TARGETS, globalBind("target"))),
+      ...textFields.map(add),
+    ),
     add(stepBar({ addStep, removeStep, selectStep })),
     section("Direction", add(segmented("direction", ["from", "to"], stepBind("direction")))),
     section(
@@ -414,6 +457,8 @@ export function createControls(form, { setState, updateStep, addStep, removeStep
       const first = state.active === 0;
       offsetField.el.hidden = first;
       offsetNote.hidden = first;
+
+      textFields.forEach((field) => (field.el.hidden = state.target === "boxes"));
 
       const scrubbing = isScrubbing(state);
       scrollFields.forEach((field) => (field.el.hidden = !state.scroll));

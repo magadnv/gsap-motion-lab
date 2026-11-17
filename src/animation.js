@@ -12,6 +12,7 @@
  *     timeline: false | true,      // one step = a plain tween, more = gsap.timeline()
  *     timelineVars: { ... },       // repeat, yoyo, delay, scrollTrigger of the whole timeline
  *     scroll: { ... } | null,      // ScrollTrigger settings (also inside the vars above)
+ *     split: { kind, type, mask } | null,  // SplitText settings for text targets
  *     steps: [{ method: "from" | "to", vars: { ... }, position: "-=0.2" | null }],
  *   }
  */
@@ -21,6 +22,8 @@ import {
   GLOBAL_TIMING,
   GSAP_DEFAULT_EASE,
   TRIGGER_SELECTOR,
+  HEADLINE_SELECTOR,
+  TARGETS,
 } from "./config.js";
 
 /** Round away floating point noise like 0.30000000000000004. */
@@ -36,10 +39,26 @@ export function isScrubbing(state) {
   return state.scroll && state.scrub !== "off";
 }
 
+/**
+ * SplitText settings, or null for the boxes.
+ * kind = the array to animate (split.words / split.chars / split.lines).
+ */
+export function splitConfig(state) {
+  const target = TARGETS.find((t) => t.value === state.target);
+  if (!target || !target.split) return null;
+  return {
+    kind: target.value,
+    type: target.split,
+    // a mask clips each piece, so it slides in from "behind" its own edge
+    mask: state.mask ? target.value : null,
+  };
+}
+
 /** ScrollTrigger config, or null when scroll is off. */
 function scrollTrigger(state) {
   if (!state.scroll) return null;
-  const config = { trigger: TRIGGER_SELECTOR, start: state.start };
+  const trigger = splitConfig(state) ? HEADLINE_SELECTOR : TRIGGER_SELECTOR;
+  const config = { trigger, start: state.start };
   if (isScrubbing(state)) {
     config.end = state.end;
     config.scrub = state.scrub === "true" ? true : Number(state.scrub);
@@ -112,6 +131,7 @@ export function describe(state) {
     timeline,
     timelineVars: timeline ? globals : {},
     scroll: scrollTrigger(state),
+    split: splitConfig(state),
     steps,
   };
 }

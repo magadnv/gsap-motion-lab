@@ -14,9 +14,11 @@
  */
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
 import { describe } from "./animation.js";
+import { DEFAULT_TEXT, MASK_ROOM } from "./config.js";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, SplitText);
 
 /** Wait this long after the last change before replaying. */
 const REPLAY_DELAY_MS = 140;
@@ -27,6 +29,7 @@ const REPLAY_DELAY_MS = 140;
  * @param {HTMLElement} options.scroller       canvas that scrolls in scroll mode
  * @param {HTMLElement} options.subject        wrapper of the animated elements (the trigger)
  * @param {HTMLElement} options.root           element containing the boxes
+ * @param {HTMLElement} options.headline       heading used by the text targets
  * @param {HTMLElement} options.progress       bar that shows overall progress
  * @param {HTMLButtonElement} options.playButton
  * @param {HTMLButtonElement} options.replayButton
@@ -39,6 +42,7 @@ export function createPreview({
   scroller,
   subject,
   root,
+  headline,
   progress,
   playButton,
   replayButton,
@@ -104,7 +108,22 @@ export function createPreview({
       : undefined;
     const { scrollTrigger: _omit, ...timelineVars } = animation.timelineVars;
 
+    // Boxes or headline? SplitText runs inside the context, so revert()
+    // also puts the headline back together before the next split.
+    const split = animation.split;
+    root.hidden = Boolean(split);
+    headline.hidden = !split;
+    // textContent, never innerHTML: the text can come from a shared link
+    if (split) headline.textContent = state.text.trim() || DEFAULT_TEXT;
+
     ctx = gsap.context(() => {
+      let targets = boxes;
+      if (split) {
+        const result = SplitText.create(headline, { type: split.type, mask: split.mask ?? undefined });
+        if (split.mask) gsap.set(result.masks, MASK_ROOM); // same as in the code output
+        targets = result[split.kind];
+      }
+
       tl = gsap.timeline({
         ...timelineVars,
         scrollTrigger,
@@ -124,7 +143,7 @@ export function createPreview({
 
       animation.steps.forEach((step, i) => {
         const { scrollTrigger: _st, ...vars } = step.vars;
-        const tween = gsap[step.method](boxes, vars);
+        const tween = gsap[step.method](targets, vars);
         tl.add(tween, step.position ?? undefined);
         if (i === state.active) activeTween = tween;
       });
