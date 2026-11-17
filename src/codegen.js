@@ -1,75 +1,80 @@
 /**
- * Code generation.
+ * Code output: prints the animation description (animation.js) as GSAP code.
  *
- * Rule: only values that differ from GSAP's defaults (or from a property's
- * neutral value) are written. The preview plays the very same vars object,
- * so what you see is exactly what you copy.
+ *   one step   ->  gsap.from(".box", { ... });
+ *   several    ->  const tl = gsap.timeline({ ... });
+ *                  tl.from(".box", { ... });
+ *                  tl.to(".box", { ... }, "-=0.2");
+ *
+ * The code is first built as a list of [type, text] tokens. Plain text
+ * (clipboard) and highlighted HTML (display) are both rendered from it.
  */
-import { PROPERTIES, TIMING, GSAP_DEFAULT_EASE, TARGET_SELECTOR } from "./config.js";
+import { describe } from "./animation.js";
+import { TARGET_SELECTOR } from "./config.js";
 
-/** Round away floating point noise like 0.30000000000000004. */
-export function clean(value) {
-  return Math.round(value * 1000) / 1000;
+const INDENT = "  ";
+
+/* ------------------------------------------------------------------ */
+/* Token printer                                                       */
+/* ------------------------------------------------------------------ */
+
+/** Print a single value: string, number, boolean or nested object. */
+function printValue(value, depth, out) {
+  if (typeof value === "string") out.push(["str", `"${value}"`]);
+  else if (typeof value === "number" || typeof value === "boolean") out.push(["num", String(value)]);
+  else printObject(value, depth, out);
 }
 
-const timingDefault = (key) => TIMING.find((t) => t.key === key).gsapDefault;
-
-/**
- * Build the vars object for gsap.to / gsap.from.
- * Key order is the order people usually write it in:
- * properties, duration, delay, ease, then the sequencing options.
- */
-export function buildTweenVars(state) {
-  const vars = {};
-
-  for (const prop of PROPERTIES) {
-    const value = clean(state[prop.key]);
-    if (value !== prop.neutral) vars[prop.key] = value;
-  }
-
-  const addTiming = (key) => {
-    const value = clean(state[key]);
-    if (value !== timingDefault(key)) vars[key] = value;
-  };
-
-  addTiming("duration");
-  addTiming("delay");
-  if (state.ease !== GSAP_DEFAULT_EASE) vars.ease = state.ease;
-  addTiming("stagger");
-  addTiming("repeat");
-  // yoyo without repeat does nothing, so it's left out
-  if (state.yoyo && state.repeat !== 0) vars.yoyo = true;
-
-  return vars;
-}
-
-/**
- * The code as a list of [type, text] tokens. Rendering to plain text
- * (for the clipboard) and to highlighted HTML (for display) share this.
- */
-function tokenize(state) {
-  const vars = buildTweenVars(state);
-  const entries = Object.entries(vars);
-  const tokens = [
-    ["fn", `gsap.${state.direction}`],
-    ["pun", "("],
-    ["str", `"${TARGET_SELECTOR}"`],
-    ["pun", ", {"],
-  ];
-
+/** Print an object literal, one key per line, trailing commas. */
+function printObject(obj, depth, out) {
+  const entries = Object.entries(obj);
   if (entries.length === 0) {
-    tokens.push(["pun", "});"]);
-    return tokens;
+    out.push(["pun", "{}"]);
+    return;
+  }
+  out.push(["pun", "{"]);
+  for (const [key, value] of entries) {
+    out.push(["txt", `\n${INDENT.repeat(depth + 1)}`], ["key", key], ["pun", ": "]);
+    printValue(value, depth + 1, out);
+    out.push(["pun", ","]);
+  }
+  out.push(["txt", `\n${INDENT.repeat(depth)}`], ["pun", "}"]);
+}
+
+/** Print a call like  gsap.to(".box", { ... }, "-=0.2");  */
+function printCall(callee, target, vars, position, out) {
+  out.push(["fn", callee], ["pun", "("]);
+  out.push(["str", `"${target}"`], ["pun", ", "]);
+  printObject(vars, 0, out);
+  if (position) out.push(["pun", ", "], ["str", `"${position}"`]);
+  out.push(["pun", ");"]);
+}
+
+function tokenize(state) {
+  const animation = describe(state);
+  const out = [];
+
+  if (!animation.timeline) {
+    const [step] = animation.steps;
+    printCall(`gsap.${step.method}`, TARGET_SELECTOR, step.vars, null, out);
+    return out;
   }
 
-  for (const [key, value] of entries) {
-    tokens.push(["txt", "\n  "], ["key", key], ["pun", ": "]);
-    tokens.push(typeof value === "string" ? ["str", `"${value}"`] : ["num", String(value)]);
-    tokens.push(["pun", ","]);
+  // Timeline
+  out.push(["key", "const"], ["txt", " tl "], ["pun", "= "], ["fn", "gsap.timeline"], ["pun", "("]);
+  if (Object.keys(animation.timelineVars).length > 0) printObject(animation.timelineVars, 0, out);
+  out.push(["pun", ");"], ["txt", "\n"]);
+
+  for (const step of animation.steps) {
+    out.push(["txt", "\n"]);
+    printCall(`tl.${step.method}`, TARGET_SELECTOR, step.vars, step.position, out);
   }
-  tokens.push(["txt", "\n"], ["pun", "});"]);
-  return tokens;
+  return out;
 }
+
+/* ------------------------------------------------------------------ */
+/* Public API                                                          */
+/* ------------------------------------------------------------------ */
 
 /** Plain code, ready for the clipboard. */
 export function generateCode(state) {

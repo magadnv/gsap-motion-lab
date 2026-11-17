@@ -67,7 +67,8 @@
 .workspace {
   grid-area: work;
   display: grid;
-  grid-template-rows: minmax(280px, 1fr) auto;
+  /* the preview gets the space; long code scrolls inside its own box */
+  grid-template-rows: minmax(300px, 1fr) auto;
   gap: var(--space-4);
   min-height: 0;
   padding: var(--space-4);
@@ -142,7 +143,15 @@
 }
 
 /* ---------- Code ---------- */
+.code {
+  max-height: 42vh;
+  min-height: 160px;
+}
+
 .code__pre {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   margin: 0;
   padding: var(--space-4);
   overflow-x: auto;
@@ -241,6 +250,7 @@
 
   .code {
     grid-area: code;
+    max-height: none;
     margin: var(--space-4) var(--space-3) 0;
   }
 

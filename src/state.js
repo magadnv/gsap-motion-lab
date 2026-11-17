@@ -1,38 +1,74 @@
 /**
- * A tiny observable store. The state is one flat object (see INITIAL_STATE);
- * every module reads from it and writes to it through these functions only.
+ * A tiny observable store.
  *
- * Subscribers receive the full new state plus the set of keys that changed,
- * so e.g. the preview can skip work when nothing relevant moved.
+ * Shape (see INITIAL_STATE in config.js):
+ *   { steps: [step, ...], active: number, delay, repeat, yoyo }
+ *
+ * The state is treated as immutable: every update creates new objects,
+ * so subscribers can compare references if they want to skip work.
  */
-import { INITIAL_STATE } from "./config.js";
+import { INITIAL_STATE, NEW_STEP, MAX_STEPS } from "./config.js";
 
-let state = { ...INITIAL_STATE };
+let state = structuredClone(INITIAL_STATE);
 const listeners = new Set();
 
-/** Current state (a frozen snapshot, so nobody mutates it by accident). */
-export function getState() {
-  return Object.freeze({ ...state });
+function emit() {
+  const snapshot = getState();
+  listeners.forEach((listener) => listener(snapshot));
 }
 
-/** Merge a partial update into the state and notify subscribers. */
-export function setState(patch) {
-  const changed = Object.keys(patch).filter((key) => patch[key] !== state[key]);
-  if (changed.length === 0) return;
+/** Current state. Treat it as read-only. */
+export function getState() {
+  return state;
+}
 
+/** Merge a partial update into the top level of the state. */
+export function setState(patch) {
   state = { ...state, ...patch };
-  const snapshot = getState();
-  listeners.forEach((listener) => listener(snapshot, new Set(changed)));
+  emit();
+}
+
+/** Merge a partial update into the step that is being edited. */
+export function updateStep(patch) {
+  const steps = state.steps.map((step, i) => (i === state.active ? { ...step, ...patch } : step));
+  setState({ steps });
+}
+
+/** Switch the panel to another step. */
+export function selectStep(index) {
+  if (index < 0 || index >= state.steps.length || index === state.active) return;
+  setState({ active: index });
+}
+
+/** Append a new step and start editing it. */
+export function addStep() {
+  if (state.steps.length >= MAX_STEPS) return;
+  setState({ steps: [...state.steps, { ...NEW_STEP }], active: state.steps.length });
+}
+
+/** Remove the step being edited (the last remaining step can't be removed). */
+export function removeStep() {
+  if (state.steps.length <= 1) return;
+  const steps = state.steps.filter((_, i) => i !== state.active);
+  // the new first step starts at the beginning, so it has no offset
+  steps[0] = { ...steps[0], offset: 0 };
+  setState({ steps, active: Math.min(state.active, steps.length - 1) });
+}
+
+/** Replace the whole state, e.g. from a shared link. */
+export function replaceState(next) {
+  state = { ...structuredClone(INITIAL_STATE), ...next, active: 0 };
+  emit();
 }
 
 /** Go back to the starting animation. */
 export function resetState() {
-  setState({ ...INITIAL_STATE });
+  replaceState(structuredClone(INITIAL_STATE));
 }
 
 /**
  * Register a listener. Returns an unsubscribe function.
- * @param {(state: object, changed: Set<string>) => void} listener
+ * @param {(state: object) => void} listener
  */
 export function subscribe(listener) {
   listeners.add(listener);

@@ -15,11 +15,29 @@ export const PROPERTIES = [
   { key: "opacity", label: "opacity", min: 0, max: 1, step: 0.05, neutral: 1, unit: "" },
 ];
 
-/** Timing controls. `gsapDefault` is what GSAP uses when the key is left out. */
-export const TIMING = [
+/** Timing of a single step. `gsapDefault` is what GSAP uses when the key is left out. */
+export const STEP_TIMING = [
   { key: "duration", label: "duration", min: 0, max: 5, step: 0.05, gsapDefault: 0.5, unit: "s" },
-  { key: "delay", label: "delay", min: 0, max: 3, step: 0.05, gsapDefault: 0, unit: "s" },
   { key: "stagger", label: "stagger", min: 0, max: 1, step: 0.01, gsapDefault: 0, unit: "s" },
+];
+
+/**
+ * Where a step starts relative to the end of the previous one.
+ * Becomes GSAP's position parameter: -0.2 -> "-=0.2" (overlap), 0.3 -> "+=0.3" (pause).
+ */
+export const OFFSET = {
+  key: "offset",
+  label: "offset",
+  min: -2,
+  max: 2,
+  step: 0.05,
+  gsapDefault: 0,
+  unit: "s",
+};
+
+/** Timing of the whole animation (all steps together). */
+export const GLOBAL_TIMING = [
+  { key: "delay", label: "delay", min: 0, max: 3, step: 0.05, gsapDefault: 0, unit: "s" },
   // -1 is GSAP's value for "repeat forever"
   { key: "repeat", label: "repeat", min: -1, max: 10, step: 1, gsapDefault: 0, unit: "" },
 ];
@@ -49,20 +67,50 @@ export const EASES = [
 /** GSAP's built-in default ease. */
 export const GSAP_DEFAULT_EASE = "power1.out";
 
-/** The animation the app opens with (and returns to on Reset). */
-export const INITIAL_STATE = Object.freeze({
+export const MAX_STEPS = 5;
+
+/** A step where every value is GSAP's default: produces an empty vars object. */
+export const BASELINE_STEP = Object.freeze({
+  direction: "to",
+  ...Object.fromEntries(PROPERTIES.map((p) => [p.key, p.neutral])),
+  ...Object.fromEntries(STEP_TIMING.map((t) => [t.key, t.gsapDefault])),
+  ease: GSAP_DEFAULT_EASE,
+  offset: 0,
+});
+
+/** The first step the app opens with. */
+export const INITIAL_STEP = Object.freeze({
+  ...BASELINE_STEP,
   direction: "from",
-  x: 0,
   y: 60,
-  rotation: 0,
-  scale: 1,
   opacity: 0,
   duration: 0.8,
-  delay: 0,
   ease: "power3.out",
   stagger: 0.08,
+});
+
+/** What "Add step" creates: a small lift that reads well after any first step. */
+export const NEW_STEP = Object.freeze({
+  ...BASELINE_STEP,
+  y: -24,
+  duration: 0.5,
+  ease: "power2.inOut",
+  stagger: 0.05,
+  offset: -0.1,
+});
+
+/** Global values at GSAP's defaults. */
+export const BASELINE_GLOBALS = Object.freeze({
+  delay: 0,
   repeat: 0,
   yoyo: false,
+});
+
+/** The animation the app opens with (and returns to on Reset). */
+export const INITIAL_STATE = Object.freeze({
+  steps: [INITIAL_STEP],
+  active: 0, // index of the step being edited
+  ...BASELINE_GLOBALS,
 });
 
 /** Selector the generated code targets. */

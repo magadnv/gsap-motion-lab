@@ -3,15 +3,28 @@
  *
  * The form is generated from config.js, so adding a property there
  * automatically adds a slider here. Two directions of data flow:
- *   user input  -> setState()        (handled by event listeners below)
- *   state change -> syncControls()   (keeps every input showing the truth,
- *                                     e.g. after Reset or loading a link)
+ *   user input   -> store actions   (event listeners below)
+ *   state change -> sync(state)     (keeps every input showing the truth,
+ *                                    e.g. after Reset or loading a link)
+ *
+ * Every field gets a "binding": how to read its value from the state and
+ * how to write it back. Step fields edit the active step, global fields
+ * edit the top level of the state.
  */
-import { PROPERTIES, TIMING, EASE_FAMILIES, EASE_TYPES, GSAP_DEFAULT_EASE } from "./config.js";
-import { clean } from "./codegen.js";
+import {
+  PROPERTIES,
+  STEP_TIMING,
+  OFFSET,
+  GLOBAL_TIMING,
+  EASE_FAMILIES,
+  EASE_TYPES,
+  GSAP_DEFAULT_EASE,
+  MAX_STEPS,
+} from "./config.js";
+import { clean } from "./animation.js";
 
 /* ------------------------------------------------------------------ */
-/* Small DOM helper                                                    */
+/* Small helpers                                                       */
 /* ------------------------------------------------------------------ */
 
 /** Create an element with attributes and children in one call. */
@@ -52,18 +65,18 @@ function section(title, ...children) {
 }
 
 /**
- * Slider + number field bound to one state key.
+ * Slider + number field.
  * `baseline` is the value that means "not in the code" (neutral / GSAP default);
- * the label lights up when the value differs from it.
+ * the label gets a red dot when the value differs from it.
  */
-function numberField(def, baseline, setState) {
+function numberField(def, baseline, bind) {
   const id = `ctl-${def.key}`;
 
   const range = h("input", {
+    type: "range",
     min: def.min,
     max: def.max,
     step: def.step,
-    type: "range",
     class: "field__range",
     id,
     "aria-label": def.label,
@@ -97,24 +110,24 @@ function numberField(def, baseline, setState) {
     ),
   );
 
+  const commit = (value) => {
+    const next = clean(clamp(value, def.min, def.max));
+    number.value = next;
+    bind.set(next);
+  };
+
   // Slider: every movement updates the state.
-  range.addEventListener("input", () => {
-    setState({ [def.key]: clean(Number(range.value)) });
-  });
+  range.addEventListener("input", () => bind.set(clean(Number(range.value))));
 
   // Number field: update while typing only when the value is valid,
   // clamp and write back on blur / Enter.
   number.addEventListener("input", () => {
     const value = parseNumber(number.value);
-    if (Number.isFinite(value) && value >= def.min && value <= def.max) {
-      setState({ [def.key]: clean(value) });
-    }
+    if (Number.isFinite(value) && value >= def.min && value <= def.max) bind.set(clean(value));
   });
   number.addEventListener("change", () => {
     const parsed = parseNumber(number.value);
-    const next = clean(clamp(Number.isFinite(parsed) ? parsed : baseline, def.min, def.max));
-    number.value = next;
-    setState({ [def.key]: next });
+    commit(Number.isFinite(parsed) ? parsed : baseline);
   });
 
   // Arrow keys step the value like a native number field; Shift = 10 steps.
@@ -123,21 +136,19 @@ function numberField(def, baseline, setState) {
     event.preventDefault();
     const current = parseNumber(number.value);
     const delta = def.step * (event.shiftKey ? 10 : 1) * (event.key === "ArrowUp" ? 1 : -1);
-    const next = clean(clamp((Number.isFinite(current) ? current : baseline) + delta, def.min, def.max));
-    number.value = next;
-    setState({ [def.key]: next });
+    commit((Number.isFinite(current) ? current : baseline) + delta);
   });
 
-  // Small hidden extra: double-click a label to zero that one value.
+  // Small hidden extra: double-click a label to reset that one value.
   label.addEventListener("dblclick", (event) => {
     event.preventDefault();
-    setState({ [def.key]: baseline });
+    bind.set(baseline);
   });
 
   return {
     el: field,
     sync(state) {
-      const value = state[def.key];
+      const value = bind.get(state);
       range.value = value;
       range.style.setProperty("--fill", `${((value - def.min) / (def.max - def.min)) * 100}%`);
       // Don't overwrite what the user is typing right now.
@@ -147,18 +158,18 @@ function numberField(def, baseline, setState) {
   };
 }
 
-/** Two-option segmented control (radio group), used for from / to. */
-function segmented(key, options, setState) {
-  const group = h("div", { class: "segmented", role: "radiogroup", "aria-label": key });
+/** Segmented control (radio group), used for from / to. */
+function segmented(name, options, bind) {
+  const group = h("div", { class: "segmented", role: "radiogroup", "aria-label": name });
   const inputs = options.map((option) => {
     const input = h("input", {
       type: "radio",
-      name: key,
+      name,
       value: option,
-      id: `ctl-${key}-${option}`,
+      id: `ctl-${name}-${option}`,
       class: "segmented__input",
     });
-    input.addEventListener("change", () => setState({ [key]: option }));
+    input.addEventListener("change", () => bind.set(option));
     group.append(input, h("label", { for: input.id, class: "segmented__option", text: option }));
     return input;
   });
@@ -166,13 +177,14 @@ function segmented(key, options, setState) {
   return {
     el: group,
     sync(state) {
-      inputs.forEach((input) => (input.checked = input.value === state[key]));
+      const value = bind.get(state);
+      inputs.forEach((input) => (input.checked = input.value === value));
     },
   };
 }
 
 /** Ease dropdown, grouped by family, with the curve drawn underneath. */
-function easeField(easeCurve, setState) {
+function easeField(easeCurve, bind) {
   const select = h("select", { class: "select__input", id: "ctl-ease", "aria-label": "ease" });
   select.append(h("option", { value: "none", text: "none" }));
   for (const family of EASE_FAMILIES) {
@@ -183,7 +195,7 @@ function easeField(easeCurve, setState) {
     });
     select.append(group);
   }
-  select.addEventListener("change", () => setState({ ease: select.value }));
+  select.addEventListener("change", () => bind.set(select.value));
 
   const field = h(
     "div",
@@ -196,21 +208,22 @@ function easeField(easeCurve, setState) {
   return {
     el: field,
     sync(state) {
-      select.value = state.ease;
-      field.classList.toggle("is-changed", state.ease !== GSAP_DEFAULT_EASE);
-      if (drawn !== state.ease) {
-        easeCurve.draw(state.ease);
-        drawn = state.ease;
+      const ease = bind.get(state);
+      select.value = ease;
+      field.classList.toggle("is-changed", ease !== GSAP_DEFAULT_EASE);
+      if (drawn !== ease) {
+        easeCurve.draw(ease);
+        drawn = ease;
       }
     },
   };
 }
 
-/** On/off switch (a styled checkbox), used for yoyo. */
-function toggleField(key, label, hint, setState) {
+/** On/off switch (a styled checkbox). `isInactive` dims it when it has no effect. */
+function toggleField(key, label, hint, bind, isInactive = () => false) {
   const id = `ctl-${key}`;
   const input = h("input", { type: "checkbox", id, class: "toggle__input", role: "switch" });
-  input.addEventListener("change", () => setState({ [key]: input.checked }));
+  input.addEventListener("change", () => bind.set(input.checked));
 
   const field = h(
     "div",
@@ -223,10 +236,67 @@ function toggleField(key, label, hint, setState) {
   return {
     el: field,
     sync(state) {
-      input.checked = Boolean(state[key]);
-      field.classList.toggle("is-changed", Boolean(state[key]));
-      // yoyo only does something when the tween repeats
-      field.classList.toggle("is-inactive", state.repeat === 0);
+      const on = Boolean(bind.get(state));
+      input.checked = on;
+      field.classList.toggle("is-changed", on);
+      field.classList.toggle("is-inactive", isInactive(state));
+    },
+  };
+}
+
+/** Step tabs (1, 2, 3 ...) with Add and Remove. */
+function stepBar(actions) {
+  const tabs = h("div", { class: "steps__tabs", role: "tablist", "aria-label": "Steps" });
+  const addButton = h("button", { type: "button", class: "steps__add", text: "Add step" });
+  const removeButton = h("button", { type: "button", class: "steps__remove", text: "Remove" });
+
+  addButton.addEventListener("click", actions.addStep);
+  removeButton.addEventListener("click", actions.removeStep);
+
+  let signature = "";
+
+  return {
+    el: h(
+      "div",
+      { class: "steps" },
+      h("div", { class: "steps__row" }, tabs, addButton),
+      h(
+        "div",
+        { class: "steps__meta" },
+        h("span", { class: "steps__hint", "data-steps-hint": "" }),
+        removeButton,
+      ),
+    ),
+    sync(state) {
+      // Re-render the tabs only when something they show has changed.
+      const next = `${state.active}|${state.steps.map((s) => s.direction).join(",")}`;
+      if (next !== signature) {
+        signature = next;
+        tabs.replaceChildren(
+          ...state.steps.map((step, i) => {
+            const tab = h(
+              "button",
+              {
+                type: "button",
+                class: "steps__tab",
+                role: "tab",
+                "aria-selected": String(i === state.active),
+              },
+              h("span", { class: "steps__num", text: String(i + 1).padStart(2, "0") }),
+              h("span", { class: "steps__dir", text: step.direction }),
+            );
+            tab.addEventListener("click", () => actions.selectStep(i));
+            return tab;
+          }),
+        );
+      }
+
+      const single = state.steps.length === 1;
+      addButton.disabled = state.steps.length >= MAX_STEPS;
+      removeButton.hidden = single;
+      this.el.querySelector("[data-steps-hint]").textContent = single
+        ? "One step = a single tween. Add one for a timeline."
+        : `Editing step ${state.active + 1} of ${state.steps.length}`;
     },
   };
 }
@@ -237,32 +307,56 @@ function toggleField(key, label, hint, setState) {
 
 /**
  * Render all controls into the form.
+ * @param {HTMLFormElement} form
+ * @param {object} deps  store actions + the ease curve instance
  * @returns {{ sync(state: object): void }}
  */
-export function createControls(form, { setState, easeCurve }) {
+export function createControls(form, { setState, updateStep, addStep, removeStep, selectStep, easeCurve }) {
   const controls = [];
   const add = (control) => (controls.push(control), control.el);
 
-  const timing = (key) => TIMING.find((t) => t.key === key);
+  // Bindings: where a field reads and writes its value.
+  const stepBind = (key) => ({
+    get: (state) => state.steps[state.active][key],
+    set: (value) => updateStep({ [key]: value }),
+  });
+  const globalBind = (key) => ({
+    get: (state) => state[key],
+    set: (value) => setState({ [key]: value }),
+  });
+
+  const stepTiming = (key) => STEP_TIMING.find((t) => t.key === key);
+  const globalTiming = (key) => GLOBAL_TIMING.find((t) => t.key === key);
+
+  const offsetField = numberField(OFFSET, OFFSET.gsapDefault, stepBind("offset"));
+  const offsetNote = h("p", {
+    class: "group__note",
+    text: "offset: negative overlaps the previous step, positive waits.",
+  });
 
   form.append(
-    section("Direction", add(segmented("direction", ["from", "to"], setState))),
+    add(stepBar({ addStep, removeStep, selectStep })),
+    section("Direction", add(segmented("direction", ["from", "to"], stepBind("direction")))),
     section(
       "Properties",
-      ...PROPERTIES.map((prop) => add(numberField(prop, prop.neutral, setState))),
+      ...PROPERTIES.map((prop) => add(numberField(prop, prop.neutral, stepBind(prop.key)))),
     ),
+    section("Ease", add(easeField(easeCurve, stepBind("ease")))),
     section(
       "Timing",
-      add(numberField(timing("duration"), timing("duration").gsapDefault, setState)),
-      add(numberField(timing("delay"), timing("delay").gsapDefault, setState)),
+      ...STEP_TIMING.map((def) => add(numberField(def, stepTiming(def.key).gsapDefault, stepBind(def.key)))),
+      add(offsetField),
+      offsetNote,
     ),
-    section("Ease", add(easeField(easeCurve, setState))),
     section(
-      "Sequence",
-      add(numberField(timing("stagger"), timing("stagger").gsapDefault, setState)),
-      add(numberField(timing("repeat"), timing("repeat").gsapDefault, setState)),
-      add(toggleField("yoyo", "yoyo", "plays back on every repeat", setState)),
-      h("p", { class: "group__note", text: "stagger 0 = all boxes at once. repeat -1 = forever." }),
+      "Playback",
+      add(numberField(globalTiming("delay"), 0, globalBind("delay"))),
+      add(numberField(globalTiming("repeat"), 0, globalBind("repeat"))),
+      add(toggleField("yoyo", "yoyo", "plays back on every repeat", globalBind("yoyo"), (s) => s.repeat === 0)),
+      h("p", {
+        class: "group__note",
+        text: "Applies to the whole animation. repeat -1 = forever.",
+      }),
     ),
   );
 
@@ -272,6 +366,10 @@ export function createControls(form, { setState, easeCurve }) {
   return {
     sync(state) {
       controls.forEach((control) => control.sync(state));
+      // The first step always starts at 0, so it has no offset.
+      const first = state.active === 0;
+      offsetField.el.hidden = first;
+      offsetNote.hidden = first;
     },
   };
 }

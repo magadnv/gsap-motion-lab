@@ -2,7 +2,7 @@
  * Motion Lab: entry point.
  * Wires the modules together. All data flows through the store:
  *
- *   controls ──setState──▶ state ──subscribe──▶ controls.sync
+ *   controls ──actions──▶ state ──subscribe──▶ controls.sync
  *                                          ├──▶ code panel
  *                                          ├──▶ URL (shareable link)
  *                                          └──▶ preview.update
@@ -12,7 +12,17 @@ import "./styles/base.css";
 import "./styles/layout.css";
 import "./styles/controls.css";
 
-import { getState, setState, resetState, subscribe } from "./state.js";
+import {
+  getState,
+  setState,
+  updateStep,
+  addStep,
+  removeStep,
+  selectStep,
+  replaceState,
+  resetState,
+  subscribe,
+} from "./state.js";
 import { createControls } from "./controls.js";
 import { createPreview } from "./preview.js";
 import { createEaseCurve } from "./easeCurve.js";
@@ -23,10 +33,17 @@ import { readUrlState, writeUrlState, shareUrl } from "./urlState.js";
 const $ = (selector) => document.querySelector(selector);
 
 // A shared link restores its animation before anything renders.
-setState(readUrlState());
+replaceState(readUrlState());
 
 const easeCurve = createEaseCurve();
-const controls = createControls($("[data-controls]"), { setState, easeCurve });
+const controls = createControls($("[data-controls]"), {
+  setState,
+  updateStep,
+  addStep,
+  removeStep,
+  selectStep,
+  easeCurve,
+});
 
 const preview = createPreview({
   root: $("[data-boxes]"),

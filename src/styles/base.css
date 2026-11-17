@@ -22,6 +22,11 @@ body {
   transition: opacity 240ms var(--ease-ui);
 }
 
+/* [hidden] must win over display rules like grid or flex */
+[hidden] {
+  display: none !important;
+}
+
 button,
 input,
 select {
