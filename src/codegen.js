@@ -54,6 +54,11 @@ function tokenize(state) {
   const animation = describe(state);
   const out = [];
 
+  if (animation.scroll) {
+    out.push(["fn", "gsap.registerPlugin"], ["pun", "("], ["txt", "ScrollTrigger"], ["pun", ");"]);
+    out.push(["txt", "\n\n"]);
+  }
+
   if (!animation.timeline) {
     const [step] = animation.steps;
     printCall(`gsap.${step.method}`, TARGET_SELECTOR, step.vars, null, out);

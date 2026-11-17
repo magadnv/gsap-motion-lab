@@ -10,11 +10,18 @@
  * Result:
  *   {
  *     timeline: false | true,      // one step = a plain tween, more = gsap.timeline()
- *     timelineVars: { ... },       // repeat, yoyo, delay of the whole timeline
+ *     timelineVars: { ... },       // repeat, yoyo, delay, scrollTrigger of the whole timeline
+ *     scroll: { ... } | null,      // ScrollTrigger settings (also inside the vars above)
  *     steps: [{ method: "from" | "to", vars: { ... }, position: "-=0.2" | null }],
  *   }
  */
-import { PROPERTIES, STEP_TIMING, GLOBAL_TIMING, GSAP_DEFAULT_EASE } from "./config.js";
+import {
+  PROPERTIES,
+  STEP_TIMING,
+  GLOBAL_TIMING,
+  GSAP_DEFAULT_EASE,
+  TRIGGER_SELECTOR,
+} from "./config.js";
 
 /** Round away floating point noise like 0.30000000000000004. */
 export function clean(value) {
@@ -24,13 +31,38 @@ export function clean(value) {
 const stepDefault = (key) => STEP_TIMING.find((t) => t.key === key).gsapDefault;
 const globalDefault = (key) => GLOBAL_TIMING.find((t) => t.key === key).gsapDefault;
 
-/** delay / repeat / yoyo for the whole animation. */
+/** Scrub ties progress to the scrollbar: delay and repeat make no sense then. */
+export function isScrubbing(state) {
+  return state.scroll && state.scrub !== "off";
+}
+
+/** ScrollTrigger config, or null when scroll is off. */
+function scrollTrigger(state) {
+  if (!state.scroll) return null;
+  const config = { trigger: TRIGGER_SELECTOR, start: state.start };
+  if (isScrubbing(state)) {
+    config.end = state.end;
+    config.scrub = state.scrub === "true" ? true : Number(state.scrub);
+  } else {
+    // play when it scrolls in, rewind when scrolling back above the start
+    config.toggleActions = "play none none reverse";
+  }
+  if (state.markers) config.markers = true;
+  return config;
+}
+
+/** delay / repeat / yoyo / scrollTrigger for the whole animation. */
 function globalVars(state) {
   const vars = {};
+  if (isScrubbing(state)) {
+    vars.scrollTrigger = scrollTrigger(state);
+    return vars;
+  }
   if (clean(state.delay) !== globalDefault("delay")) vars.delay = clean(state.delay);
   if (clean(state.repeat) !== globalDefault("repeat")) vars.repeat = clean(state.repeat);
   // yoyo without repeat does nothing, so it's left out
   if (state.yoyo && state.repeat !== 0) vars.yoyo = true;
+  if (state.scroll) vars.scrollTrigger = scrollTrigger(state);
   return vars;
 }
 
@@ -53,6 +85,7 @@ function stepVars(step, globals = {}) {
   if (clean(step.stagger) !== stepDefault("stagger")) vars.stagger = clean(step.stagger);
   if ("repeat" in globals) vars.repeat = globals.repeat;
   if ("yoyo" in globals) vars.yoyo = globals.yoyo;
+  if ("scrollTrigger" in globals) vars.scrollTrigger = globals.scrollTrigger;
 
   return vars;
 }
@@ -75,5 +108,10 @@ export function describe(state) {
     position: i === 0 ? null : position(step.offset),
   }));
 
-  return { timeline, timelineVars: timeline ? globals : {}, steps };
+  return {
+    timeline,
+    timelineVars: timeline ? globals : {},
+    scroll: scrollTrigger(state),
+    steps,
+  };
 }

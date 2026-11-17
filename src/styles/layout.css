@@ -105,13 +105,59 @@
 .stage__canvas {
   position: relative;
   flex: 1;
-  display: grid;
-  place-items: center;
   min-height: 240px;
   overflow: hidden;
   background-image: radial-gradient(var(--line) 1px, transparent 1px);
   background-size: 24px 24px;
   background-position: center;
+  /* the dot grid scrolls along with the content in scroll mode */
+  background-attachment: local;
+  overscroll-behavior: contain;
+}
+
+/* Normal mode: the subject sits in the middle, spacers are hidden */
+.stage__track {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+
+.stage__spacer {
+  display: none;
+}
+
+.stage__subject {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: var(--space-5) var(--space-4);
+}
+
+/* Scroll mode: the canvas scrolls, one canvas-height of room above and below */
+.stage.is-scroll .stage__canvas {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.stage.is-scroll .stage__track {
+  display: block;
+  height: auto;
+}
+
+.stage.is-scroll .stage__spacer {
+  display: grid;
+  place-items: end center;
+  height: var(--scroller-height, 400px);
+  padding-bottom: var(--space-5);
+}
+
+.stage__hint {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .boxes {

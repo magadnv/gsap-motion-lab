@@ -21,6 +21,9 @@ import {
   GLOBAL_TIMING,
   EASES,
   MAX_STEPS,
+  SCROLL_START,
+  SCROLL_END,
+  SCROLL_SCRUB,
   BASELINE_STEP,
   BASELINE_GLOBALS,
   INITIAL_STATE,
@@ -51,14 +54,23 @@ function applyStepValue(step, key, raw) {
   if (value !== undefined) step[key] = value;
 }
 
-/** Apply delay / repeat / yoyo from params. */
+const isOn = (value) => value === "1" || value === "true";
+
+/** Settings that must be one of a fixed list. */
+const CHOICES = { start: SCROLL_START, end: SCROLL_END, scrub: SCROLL_SCRUB };
+
+/** Apply delay / repeat / yoyo / scroll settings from params. */
 function applyGlobals(state, params) {
   for (const def of GLOBAL_TIMING) {
     const value = params.has(def.key) ? validNumber(def, params.get(def.key)) : undefined;
     if (value !== undefined) state[def.key] = value;
   }
-  const yoyo = params.get("yoyo");
-  if (yoyo === "1" || yoyo === "true") state.yoyo = true;
+  if (isOn(params.get("yoyo"))) state.yoyo = true;
+  if (isOn(params.get("scroll"))) state.scroll = true;
+  if (isOn(params.get("markers"))) state.markers = true;
+  for (const [key, options] of Object.entries(CHOICES)) {
+    if (options.includes(params.get(key))) state[key] = params.get(key);
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -90,9 +102,20 @@ export function stateToQuery(state) {
     if (value !== BASELINE_GLOBALS[def.key]) pairs.push([def.key, value]);
   }
   if (state.yoyo) pairs.push(["yoyo", 1]);
+  if (state.scroll) {
+    pairs.push(["scroll", 1]);
+    for (const key of Object.keys(CHOICES)) {
+      if (state[key] !== BASELINE_GLOBALS[key]) pairs.push([key, state[key]]);
+    }
+    if (state.markers) pairs.push(["markers", 1]);
+  }
 
+  // spaces as "+" ("top+center"), which URLSearchParams reads back as spaces
   const encode = (text) =>
-    encodeURIComponent(String(text)).replace(/%2C/gi, ",").replace(/%3A/gi, ":");
+    encodeURIComponent(String(text))
+      .replace(/%2C/gi, ",")
+      .replace(/%3A/gi, ":")
+      .replace(/%20/g, "+");
   return pairs.map(([key, value]) => `${key}=${encode(value)}`).join("&");
 }
 

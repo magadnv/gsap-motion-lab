@@ -46,6 +46,9 @@ const controls = createControls($("[data-controls]"), {
 });
 
 const preview = createPreview({
+  stage: $(".stage"),
+  scroller: $("[data-scroller]"),
+  subject: $("[data-subject]"),
   root: $("[data-boxes]"),
   progress: $("[data-progress]"),
   playButton: $('[data-action="play"]'),

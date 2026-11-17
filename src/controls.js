@@ -20,8 +20,12 @@ import {
   EASE_TYPES,
   GSAP_DEFAULT_EASE,
   MAX_STEPS,
+  SCROLL_START,
+  SCROLL_END,
+  SCROLL_SCRUB,
+  BASELINE_GLOBALS,
 } from "./config.js";
-import { clean } from "./animation.js";
+import { clean, isScrubbing } from "./animation.js";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -219,6 +223,30 @@ function easeField(easeCurve, bind) {
   };
 }
 
+/** Labeled dropdown with a fixed list of options (ScrollTrigger settings). */
+function selectField(key, label, options, bind) {
+  const id = `ctl-${key}`;
+  const select = h("select", { class: "select__input", id });
+  options.forEach((option) => select.append(h("option", { value: option, text: option })));
+  select.addEventListener("change", () => bind.set(select.value));
+
+  const field = h(
+    "div",
+    { class: "field field--select", "data-key": key },
+    h("label", { class: "field__label", for: id, text: label }),
+    h("div", { class: "select" }, select),
+  );
+
+  return {
+    el: field,
+    sync(state) {
+      const value = bind.get(state);
+      select.value = value;
+      field.classList.toggle("is-changed", value !== BASELINE_GLOBALS[key]);
+    },
+  };
+}
+
 /** On/off switch (a styled checkbox). `isInactive` dims it when it has no effect. */
 function toggleField(key, label, hint, bind, isInactive = () => false) {
   const id = `ctl-${key}`;
@@ -329,6 +357,25 @@ export function createControls(form, { setState, updateStep, addStep, removeStep
   const globalTiming = (key) => GLOBAL_TIMING.find((t) => t.key === key);
 
   const offsetField = numberField(OFFSET, OFFSET.gsapDefault, stepBind("offset"));
+
+  // ScrollTrigger settings only show while scroll is on; "end" only matters with scrub.
+  const scrollFields = [
+    selectField("start", "start", SCROLL_START, globalBind("start")),
+    selectField("end", "end", SCROLL_END, globalBind("end")),
+    selectField("scrub", "scrub", SCROLL_SCRUB, globalBind("scrub")),
+    toggleField("markers", "markers", "show start and end lines", globalBind("markers")),
+  ];
+  const scrollNote = h("p", { class: "group__note" });
+  const playbackSection = section(
+    "Playback",
+    add(numberField(globalTiming("delay"), 0, globalBind("delay"))),
+    add(numberField(globalTiming("repeat"), 0, globalBind("repeat"))),
+    add(toggleField("yoyo", "yoyo", "plays back on every repeat", globalBind("yoyo"), (s) => s.repeat === 0)),
+    h("p", {
+      class: "group__note",
+      text: "Applies to the whole animation. repeat -1 = forever.",
+    }),
+  );
   const offsetNote = h("p", {
     class: "group__note",
     text: "offset: negative overlaps the previous step, positive waits.",
@@ -348,15 +395,12 @@ export function createControls(form, { setState, updateStep, addStep, removeStep
       add(offsetField),
       offsetNote,
     ),
+    playbackSection,
     section(
-      "Playback",
-      add(numberField(globalTiming("delay"), 0, globalBind("delay"))),
-      add(numberField(globalTiming("repeat"), 0, globalBind("repeat"))),
-      add(toggleField("yoyo", "yoyo", "plays back on every repeat", globalBind("yoyo"), (s) => s.repeat === 0)),
-      h("p", {
-        class: "group__note",
-        text: "Applies to the whole animation. repeat -1 = forever.",
-      }),
+      "Scroll",
+      add(toggleField("scroll", "trigger", "play on scroll (ScrollTrigger)", globalBind("scroll"))),
+      ...scrollFields.map(add),
+      scrollNote,
     ),
   );
 
@@ -370,6 +414,15 @@ export function createControls(form, { setState, updateStep, addStep, removeStep
       const first = state.active === 0;
       offsetField.el.hidden = first;
       offsetNote.hidden = first;
+
+      const scrubbing = isScrubbing(state);
+      scrollFields.forEach((field) => (field.el.hidden = !state.scroll));
+      scrollFields[1].el.hidden = !scrubbing; // end
+      scrollNote.hidden = !state.scroll;
+      scrollNote.textContent = scrubbing
+        ? "Scrub ties progress to the scrollbar, so delay and repeat are left out."
+        : "Plays when the start line is reached, rewinds when scrolling back up.";
+      playbackSection.classList.toggle("is-inactive", scrubbing);
     },
   };
 }

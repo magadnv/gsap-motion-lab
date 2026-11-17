@@ -523,3 +523,16 @@
     height: 36px;
   }
 }
+
+/* ---------- Select row (ScrollTrigger settings) ---------- */
+.field--select {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* A whole group that currently has no effect (Playback while scrubbing) */
+.group.is-inactive > :not(legend):not(.group__note:last-child) {
+  opacity: 0.4;
+}

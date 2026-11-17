@@ -99,11 +99,25 @@ export const NEW_STEP = Object.freeze({
   offset: -0.1,
 });
 
-/** Global values at GSAP's defaults. */
+/**
+ * ScrollTrigger choices. Presets instead of free text keep links valid
+ * and cover what most scroll animations use.
+ */
+export const SCROLL_START = ["top bottom", "top 80%", "top center", "top top"];
+export const SCROLL_END = ["bottom top", "bottom center", "bottom 20%", "+=300", "+=600"];
+/** "off" = play once on enter (toggleActions), anything else = scrub value. */
+export const SCROLL_SCRUB = ["off", "true", "0.5", "1", "2"];
+
+/** Global values at GSAP's defaults (scroll off). */
 export const BASELINE_GLOBALS = Object.freeze({
   delay: 0,
   repeat: 0,
   yoyo: false,
+  scroll: false,
+  start: "top 80%",
+  end: "bottom 20%",
+  scrub: "off",
+  markers: false,
 });
 
 /** The animation the app opens with (and returns to on Reset). */
@@ -113,5 +127,6 @@ export const INITIAL_STATE = Object.freeze({
   ...BASELINE_GLOBALS,
 });
 
-/** Selector the generated code targets. */
+/** Selectors the generated code uses. */
 export const TARGET_SELECTOR = ".box";
+export const TRIGGER_SELECTOR = ".boxes";

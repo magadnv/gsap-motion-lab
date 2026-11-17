@@ -64,13 +64,23 @@
               <button class="btn btn--accent" type="button" data-action="replay" title="Replay (R)">Replay</button>
             </div>
           </div>
-          <div class="stage__canvas">
-            <div class="boxes" data-boxes>
-              <div class="box"></div>
-              <div class="box"></div>
-              <div class="box"></div>
-              <div class="box"></div>
-              <div class="box"></div>
+          <!-- In scroll mode the canvas becomes its own scroll container;
+               the spacers give it room to scroll the subject in and out. -->
+          <div class="stage__canvas" data-scroller>
+            <div class="stage__track">
+              <div class="stage__spacer" aria-hidden="true">
+                <span class="stage__hint">Scroll down</span>
+              </div>
+              <div class="stage__subject" data-subject>
+                <div class="boxes" data-boxes>
+                  <div class="box"></div>
+                  <div class="box"></div>
+                  <div class="box"></div>
+                  <div class="box"></div>
+                  <div class="box"></div>
+                </div>
+              </div>
+              <div class="stage__spacer" aria-hidden="true"></div>
             </div>
           </div>
           <div class="stage__progress" aria-hidden="true"><span data-progress></span></div>
