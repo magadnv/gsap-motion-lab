@@ -137,7 +137,7 @@ export const BASELINE_GLOBALS = Object.freeze({
   yoyo: false,
   scroll: false,
   start: "top 80%",
-  end: "bottom 20%",
+  end: "bottom center",
   scrub: "off",
   markers: false,
 });

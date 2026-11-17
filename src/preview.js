@@ -154,13 +154,26 @@ export function createPreview({
     onTick(null);
   }
 
-  /** Scroll mode: glide from the top to the bottom of the canvas once. */
+  /**
+   * Where the scroll-through stops, so the result stays in view:
+   * with scrub at the trigger's end (the animation is complete there),
+   * otherwise with the element centered in the canvas.
+   */
+  function scrollTarget() {
+    const max = scroller.scrollHeight - scroller.clientHeight;
+    const st = tl?.scrollTrigger;
+    if (st && st.vars.scrub) return Math.min(st.end, max);
+    const center = subject.offsetTop - (scroller.clientHeight - subject.offsetHeight) / 2;
+    return Math.min(Math.max(center, 0), max);
+  }
+
+  /** Scroll mode: glide down through the canvas once. */
   function scrollThrough() {
     autoScroll?.kill();
     scroller.scrollTop = 0;
     autoScroll = gsap.to(scroller, {
-      scrollTop: () => scroller.scrollHeight - scroller.clientHeight,
-      duration: 3.2,
+      scrollTop: scrollTarget,
+      duration: 2.6,
       ease: "sine.inOut",
       delay: 0.2,
     });
