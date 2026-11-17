@@ -1,0 +1,231 @@
+/* Controls panel: groups, slider rows, segmented control, select, toggle */
+
+.panel__form {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: var(--space-2) 0 var(--space-5);
+}
+
+/* ---------- Group ---------- */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.group:last-child {
+  border-bottom: 0;
+}
+
+.group__title {
+  float: left; /* makes <legend> behave like a normal block inside the flex fieldset */
+  width: 100%;
+  padding: 0;
+  margin-bottom: var(--space-1);
+}
+
+/* ---------- Slider row ---------- */
+.field--number {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 76px;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.field__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  cursor: default;
+  user-select: none;
+  transition: color var(--dur-ui) var(--ease-ui);
+}
+
+/* A value that differs from the default shows up in the code: mark it. */
+.field.is-changed .field__label {
+  color: var(--text);
+}
+
+.field.is-changed .field__label::after {
+  content: "";
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Range input, styled per engine */
+.field__range {
+  --fill: 0%;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  appearance: none;
+  cursor: pointer;
+}
+
+.field__range::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--text-muted) var(--fill), var(--line-strong) var(--fill));
+}
+
+.field__range::-moz-range-track {
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line-strong);
+}
+
+.field__range::-moz-range-progress {
+  height: 2px;
+  background: var(--text-muted);
+}
+
+.field__range::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text);
+  appearance: none;
+  transition: transform var(--dur-ui) var(--ease-ui);
+}
+
+.field__range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--text);
+}
+
+.field__range:hover::-webkit-slider-thumb,
+.field__range:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.field.is-changed .field__range::-webkit-slider-thumb {
+  background: var(--accent-text);
+}
+
+.field.is-changed .field__range::-moz-range-thumb {
+  background: var(--accent-text);
+}
+
+.field__range:focus-visible {
+  outline: none;
+}
+
+.field__range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 1px var(--accent-text);
+}
+
+/* Number box with unit */
+.field__input {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  transition: border-color var(--dur-ui) var(--ease-ui);
+}
+
+.field__input:focus-within {
+  border-color: var(--accent-text);
+}
+
+.field__number {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+
+.field__unit {
+  flex: none;
+  margin-left: 3px;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+/* ---------- Segmented control (from / to) ---------- */
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.segmented__input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented__option {
+  padding: 5px 0;
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background var(--dur-ui) var(--ease-ui),
+    color var(--dur-ui) var(--ease-ui);
+}
+
+.segmented__option:hover {
+  color: var(--text);
+}
+
+.segmented__input:checked + .segmented__option {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.segmented__input:focus-visible + .segmented__option {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 1px;
+}
+
+/* Bigger touch targets on phones */
+@media (max-width: 820px) {
+  .field--number {
+    grid-template-columns: 84px minmax(0, 1fr) 84px;
+  }
+
+  .field__range {
+    height: 32px;
+  }
+
+  .field__input {
+    height: 36px;
+  }
+
+  .field__number {
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+}

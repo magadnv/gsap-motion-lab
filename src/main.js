@@ -1,15 +1,22 @@
 /**
  * Motion Lab: entry point.
- * Wires the modules together: state -> preview (and later controls, code, URL).
+ * Wires the modules together. All data flows through the store:
+ *
+ *   controls ──setState──▶ state ──subscribe──▶ controls.sync
+ *                                          └──▶ preview.update
  */
 import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/layout.css";
+import "./styles/controls.css";
 
-import { getState, subscribe } from "./state.js";
+import { getState, setState, subscribe } from "./state.js";
+import { createControls } from "./controls.js";
 import { createPreview } from "./preview.js";
 
 const $ = (selector) => document.querySelector(selector);
+
+const controls = createControls($("[data-controls]"), { setState });
 
 const preview = createPreview({
   root: $("[data-boxes]"),
@@ -18,9 +25,13 @@ const preview = createPreview({
   replayButton: $('[data-action="replay"]'),
 });
 
-// Every change replays the animation.
-subscribe((state) => preview.update(state));
+subscribe((state) => {
+  controls.sync(state);
+  preview.update(state); // every change replays the animation
+});
 
 // First render.
-preview.update(getState(), { immediate: true });
+const initial = getState();
+controls.sync(initial);
+preview.update(initial, { immediate: true });
 document.body.classList.add("is-ready");
