@@ -5,7 +5,7 @@ Tune an animation with sliders, watch it play live, copy the code into your proj
 
 ![Motion Lab: controls on the left, live preview of five staggered boxes, generated GSAP code below](docs/screenshot.png)
 
-<!-- Live demo: add the deployed URL here -->
+**Live:** [gsap-motionlab.vercel.app](https://gsap-motionlab.vercel.app)
 
 ## Features
 
