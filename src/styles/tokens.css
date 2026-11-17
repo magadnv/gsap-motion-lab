@@ -1,0 +1,58 @@
+/*
+ * Design tokens.
+ * Every color, size and timing in the UI comes from here,
+ * so the whole look can be re-themed in one place.
+ */
+:root {
+  /* Surfaces, darkest to lightest */
+  --bg: #0c0c0d;
+  --surface: #121214;
+  --surface-2: #18181b;
+  --surface-3: #202024;
+  --line: #26262b;
+  --line-strong: #34343a;
+
+  /* Text */
+  --text: #ededef;
+  --text-muted: #9a9aa2;
+  --text-faint: #62626a;
+
+  /* The one accent. --accent-text is a lighter step of the same red,
+     readable as small text on the dark background. */
+  --accent: #cf1830;
+  --accent-hover: #e01f39;
+  --accent-text: #f1556a;
+  --accent-soft: rgb(207 24 48 / 0.14);
+
+  /* Syntax colors for the code block, kept quiet on purpose */
+  --code-key: #c9c9cf;
+  --code-string: #f1556a;
+  --code-number: #e8e8ea;
+  --code-punct: #6c6c74;
+  --code-fn: #9a9aa2;
+
+  /* Type */
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --fs-xs: 0.6875rem; /* 11px: labels */
+  --fs-sm: 0.8125rem; /* 13px: controls */
+  --fs-md: 0.9375rem; /* 15px: brand */
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  --panel-width: 340px;
+  --topbar-height: 56px;
+
+  --ease-ui: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-ui: 180ms;
+}

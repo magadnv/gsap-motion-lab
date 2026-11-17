@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motion Lab</title>
+    <meta
+      name="description"
+      content="A small visual playground for GSAP tweens. Tune it, watch it, copy the code."
+    />
+    <meta name="theme-color" content="#0c0c0d" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+    <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
+    />
+
+    <!-- Hide the page until the app has rendered its controls (no flash of raw HTML). -->
+    <style>
+      html { background: #0c0c0d; }
+      body:not(.is-ready) { opacity: 0; }
+    </style>
+    <noscript><style>body { opacity: 1 !important; }</style></noscript>
+  </head>
+
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <img class="brand__mark" src="/favicon.svg?v=2" alt="" width="22" height="22" />
+          <span class="brand__name">Motion Lab</span>
+          <span class="brand__tag">for GSAP</span>
+        </div>
+        <div class="topbar__actions">
+          <button class="btn btn--ghost" type="button" data-action="reset">Reset</button>
+          <button class="btn btn--ghost" type="button" data-action="copy-link">Copy link</button>
+        </div>
+      </header>
+
+      <!-- Left: the controls. Rendered by src/controls.js -->
+      <aside class="panel" aria-label="Animation settings">
+        <form class="panel__form" data-controls autocomplete="off"></form>
+      </aside>
+
+      <!-- Right: live preview + generated code -->
+      <main class="workspace">
+        <section class="stage" aria-label="Preview">
+          <div class="stage__bar">
+            <span class="label">Preview</span>
+            <div class="stage__actions">
+              <button class="btn btn--ghost" type="button" data-action="play">Play</button>
+              <button class="btn btn--accent" type="button" data-action="replay">Replay</button>
+            </div>
+          </div>
+          <div class="stage__canvas">
+            <div class="boxes" data-boxes>
+              <div class="box"></div>
+              <div class="box"></div>
+              <div class="box"></div>
+              <div class="box"></div>
+              <div class="box"></div>
+            </div>
+          </div>
+          <div class="stage__progress" aria-hidden="true"><span data-progress></span></div>
+        </section>
+
+        <section class="code" aria-label="Generated code">
+          <div class="code__bar">
+            <span class="label">Code</span>
+            <button class="btn btn--ghost" type="button" data-action="copy-code">Copy</button>
+          </div>
+          <pre class="code__pre"><code data-code></code></pre>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>Built with GSAP</span>
+        <a href="https://madebymaga.de" target="_blank" rel="noopener">madebymaga.de</a>
+      </footer>
+    </div>
+
+    <!-- Small status message for "Copied!" feedback, read out by screen readers -->
+    <div class="toast" role="status" aria-live="polite" data-toast></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
