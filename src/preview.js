@@ -16,8 +16,10 @@ const REPLAY_DELAY_MS = 140;
  * @param {HTMLElement} options.progress       bar that shows tween progress
  * @param {HTMLButtonElement} options.playButton
  * @param {HTMLButtonElement} options.replayButton
+ * @param {(t: number | null) => void} [options.onTick]
+ *        receives the first box's eased-time position (0 to 1), used by the curve dot
  */
-export function createPreview({ root, progress, playButton, replayButton }) {
+export function createPreview({ root, progress, playButton, replayButton, onTick = () => {} }) {
   const boxes = root.querySelectorAll(".box");
   let tween = null;
   let replayTimer = 0;
@@ -50,11 +52,16 @@ export function createPreview({ root, progress, playButton, replayButton }) {
       onStart: syncPlayButton,
       onUpdate() {
         setProgress(this.totalProgress());
+        // time() is the playhead inside the current repeat (it runs backwards
+        // on yoyo). The first box starts at 0, so time / duration is its position.
+        const t = state.duration > 0 ? this.time() / state.duration : 1;
+        onTick(Math.min(1, Math.max(0, t)));
       },
       onComplete: syncPlayButton,
       onRepeat: syncPlayButton,
     });
     setProgress(0);
+    onTick(null);
   }
 
   function replay() {

@@ -13,16 +13,19 @@ import "./styles/controls.css";
 import { getState, setState, subscribe } from "./state.js";
 import { createControls } from "./controls.js";
 import { createPreview } from "./preview.js";
+import { createEaseCurve } from "./easeCurve.js";
 
 const $ = (selector) => document.querySelector(selector);
 
-const controls = createControls($("[data-controls]"), { setState });
+const easeCurve = createEaseCurve();
+const controls = createControls($("[data-controls]"), { setState, easeCurve });
 
 const preview = createPreview({
   root: $("[data-boxes]"),
   progress: $("[data-progress]"),
   playButton: $('[data-action="play"]'),
   replayButton: $('[data-action="replay"]'),
+  onTick: easeCurve.setTime,
 });
 
 subscribe((state) => {

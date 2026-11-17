@@ -7,7 +7,7 @@
  *   state change -> syncControls()   (keeps every input showing the truth,
  *                                     e.g. after Reset or loading a link)
  */
-import { PROPERTIES, TIMING } from "./config.js";
+import { PROPERTIES, TIMING, EASE_FAMILIES, EASE_TYPES, GSAP_DEFAULT_EASE } from "./config.js";
 import { clean } from "./codegen.js";
 
 /* ------------------------------------------------------------------ */
@@ -171,6 +171,41 @@ function segmented(key, options, setState) {
   };
 }
 
+/** Ease dropdown, grouped by family, with the curve drawn underneath. */
+function easeField(easeCurve, setState) {
+  const select = h("select", { class: "select__input", id: "ctl-ease", "aria-label": "ease" });
+  select.append(h("option", { value: "none", text: "none" }));
+  for (const family of EASE_FAMILIES) {
+    const group = h("optgroup", { label: family });
+    EASE_TYPES.forEach((type) => {
+      const value = `${family}.${type}`;
+      group.append(h("option", { value, text: value }));
+    });
+    select.append(group);
+  }
+  select.addEventListener("change", () => setState({ ease: select.value }));
+
+  const field = h(
+    "div",
+    { class: "field field--ease" },
+    h("div", { class: "select" }, select),
+    h("div", { class: "curve-wrap" }, easeCurve.el),
+  );
+
+  let drawn = null;
+  return {
+    el: field,
+    sync(state) {
+      select.value = state.ease;
+      field.classList.toggle("is-changed", state.ease !== GSAP_DEFAULT_EASE);
+      if (drawn !== state.ease) {
+        easeCurve.draw(state.ease);
+        drawn = state.ease;
+      }
+    },
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /* Public API                                                          */
 /* ------------------------------------------------------------------ */
@@ -179,7 +214,7 @@ function segmented(key, options, setState) {
  * Render all controls into the form.
  * @returns {{ sync(state: object): void }}
  */
-export function createControls(form, { setState }) {
+export function createControls(form, { setState, easeCurve }) {
   const controls = [];
   const add = (control) => (controls.push(control), control.el);
 
@@ -196,6 +231,7 @@ export function createControls(form, { setState }) {
       add(numberField(timing("duration"), timing("duration").gsapDefault, setState)),
       add(numberField(timing("delay"), timing("delay").gsapDefault, setState)),
     ),
+    section("Ease", add(easeField(easeCurve, setState))),
   );
 
   // The form never submits; Enter in a number field just commits the value.
