@@ -323,3 +323,78 @@
     font-size: 16px;
   }
 }
+
+/* ---------- Toggle (yoyo) ---------- */
+.field--toggle {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  transition: opacity var(--dur-ui) var(--ease-ui);
+}
+
+.field--toggle.is-inactive {
+  opacity: 0.5;
+}
+
+.field__hint {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
+.toggle {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 20px;
+}
+
+.toggle__input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.toggle__track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transition: background var(--dur-ui) var(--ease-ui);
+}
+
+.toggle__track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text);
+  transition: transform var(--dur-ui) var(--ease-ui);
+}
+
+.toggle__input:checked + .toggle__track {
+  background: var(--accent);
+}
+
+.toggle__input:checked + .toggle__track::after {
+  transform: translateX(14px);
+}
+
+.toggle__input:focus-visible + .toggle__track {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+.group__note {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}

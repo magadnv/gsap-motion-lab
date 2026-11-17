@@ -206,6 +206,31 @@ function easeField(easeCurve, setState) {
   };
 }
 
+/** On/off switch (a styled checkbox), used for yoyo. */
+function toggleField(key, label, hint, setState) {
+  const id = `ctl-${key}`;
+  const input = h("input", { type: "checkbox", id, class: "toggle__input", role: "switch" });
+  input.addEventListener("change", () => setState({ [key]: input.checked }));
+
+  const field = h(
+    "div",
+    { class: "field field--toggle" },
+    h("label", { class: "field__label", for: id, text: label }),
+    h("span", { class: "field__hint", text: hint }),
+    h("span", { class: "toggle" }, input, h("span", { class: "toggle__track", "aria-hidden": "true" })),
+  );
+
+  return {
+    el: field,
+    sync(state) {
+      input.checked = Boolean(state[key]);
+      field.classList.toggle("is-changed", Boolean(state[key]));
+      // yoyo only does something when the tween repeats
+      field.classList.toggle("is-inactive", state.repeat === 0);
+    },
+  };
+}
+
 /* ------------------------------------------------------------------ */
 /* Public API                                                          */
 /* ------------------------------------------------------------------ */
@@ -232,6 +257,13 @@ export function createControls(form, { setState, easeCurve }) {
       add(numberField(timing("delay"), timing("delay").gsapDefault, setState)),
     ),
     section("Ease", add(easeField(easeCurve, setState))),
+    section(
+      "Sequence",
+      add(numberField(timing("stagger"), timing("stagger").gsapDefault, setState)),
+      add(numberField(timing("repeat"), timing("repeat").gsapDefault, setState)),
+      add(toggleField("yoyo", "yoyo", "plays back on every repeat", setState)),
+      h("p", { class: "group__note", text: "stagger 0 = all boxes at once. repeat -1 = forever." }),
+    ),
   );
 
   // The form never submits; Enter in a number field just commits the value.
