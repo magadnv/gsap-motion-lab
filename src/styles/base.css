@@ -94,27 +94,20 @@ a {
   border-color: var(--accent);
 }
 
-/* "Copied!" toast */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: var(--space-5);
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: var(--surface-3);
-  font-size: var(--fs-sm);
-  pointer-events: none;
-  opacity: 0;
-  transform: translate(-50%, 8px);
-  transition:
-    opacity var(--dur-ui) var(--ease-ui),
-    transform var(--dur-ui) var(--ease-ui);
+/* Copy buttons keep their width when the label switches to "Copied!" */
+.btn--copy {
+  min-width: 84px;
 }
 
-.toast.is-visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
+/* Visually hidden, still read by screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {

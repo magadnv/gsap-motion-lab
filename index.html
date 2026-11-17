@@ -73,7 +73,7 @@
         <section class="code" aria-label="Generated code">
           <div class="code__bar">
             <span class="label">Code</span>
-            <button class="btn btn--ghost" type="button" data-action="copy-code">Copy</button>
+            <button class="btn btn--ghost btn--copy" type="button" data-action="copy-code">Copy</button>
           </div>
           <pre class="code__pre"><code data-code></code></pre>
         </section>
@@ -85,8 +85,8 @@
       </footer>
     </div>
 
-    <!-- Small status message for "Copied!" feedback, read out by screen readers -->
-    <div class="toast" role="status" aria-live="polite" data-toast></div>
+    <!-- Announces "Copied!" to screen readers -->
+    <div class="sr-only" role="status" aria-live="polite" data-announcer></div>
 
     <script type="module" src="/src/main.js"></script>
   </body>
