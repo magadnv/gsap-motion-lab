@@ -7,6 +7,12 @@ Tune an animation with sliders, watch it play live, copy the code into your proj
 
 **Live:** [gsap-motionlab.vercel.app](https://gsap-motionlab.vercel.app)
 
+## Who it's for
+
+Mira, 27, frontend developer at a small agency. She knows `gsap.to()` from a course. The Figma file says *"smooth, a bit playful"*, so she types an ease, saves, reloads, squints, and repeats that twenty times. Motion Lab lets her compare five versions in a minute, send the designer a link, and paste the one that gets the nod.
+
+The intro page at `/` is written for her; the tool itself lives at `/lab/`.
+
 ## Features
 
 - **Live preview.** Every change replays the animation automatically. Play/Pause and Replay are there too (or press `R`).
@@ -28,7 +34,7 @@ Requires Node.js 18 or newer.
 git clone https://github.com/magadnv/gsap-motion-lab.git
 cd gsap-motion-lab
 npm install
-npm run dev        # http://localhost:5880
+npm run dev        # intro: http://localhost:5880  lab: http://localhost:5880/lab/
 ```
 
 ```bash
@@ -50,8 +56,11 @@ controls ──actions──▶ state ──subscribe──▶ controls (sync in
 `animation.js` turns the state into one plain description (steps, vars, position parameters, ScrollTrigger and SplitText settings). The preview plays that description and the code panel prints it, so what you see is exactly what you copy.
 
 ```
+index.html        intro page (/)
+lab/index.html    the tool (/lab/)
 src/
-├─ main.js        wires the modules together
+├─ landing/       intro page: reveals and the small ease demo (reuses the lab modules)
+├─ main.js        wires the lab modules together
 ├─ config.js      ranges, defaults, ease list, presets (change numbers here)
 ├─ state.js       tiny observable store with step actions
 ├─ animation.js   state -> description of the animation (shared by preview and code)

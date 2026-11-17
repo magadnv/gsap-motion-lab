@@ -3,18 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Motion Lab</title>
+
+    <!-- Links shared before the intro page existed pointed at /?s1=... : send them to the lab -->
+    <script>
+      if (/[?&](s1|direction)=/.test(location.search)) location.replace("/lab/" + location.search);
+    </script>
+
+    <title>Motion Lab: stop guessing eases</title>
     <meta
       name="description"
-      content="A small visual playground for GSAP tweens. Tune it, watch it, copy the code."
+      content="A free visual playground for GSAP. Move a slider, watch it play, copy clean code. Timeline, ScrollTrigger and SplitText included."
     />
     <meta name="theme-color" content="#0c0c0d" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Motion Lab" />
+    <meta property="og:title" content="Motion Lab: stop guessing eases" />
     <meta
       property="og:description"
-      content="A small visual playground for GSAP tweens. Tune it, watch it, copy the code."
+      content="A free visual playground for GSAP. Move a slider, watch it play, copy clean code."
     />
+    <meta property="og:image" content="https://gsap-motionlab.vercel.app/lab-screenshot.png" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
     <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
@@ -27,7 +34,7 @@
       href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
     />
 
-    <!-- Hide the page until the app has rendered its controls (no flash of raw HTML). -->
+    <!-- Hidden until fonts and animations are ready (no flash of raw HTML) -->
     <style>
       html { background: #0c0c0d; }
       body:not(.is-ready) { opacity: 0; }
@@ -35,76 +42,130 @@
     <noscript><style>body { opacity: 1 !important; }</style></noscript>
   </head>
 
-  <body>
-    <div class="app">
-      <header class="topbar">
-        <div class="brand">
-          <img class="brand__mark" src="/favicon.svg?v=2" alt="" width="22" height="22" />
-          <span class="brand__name">Motion Lab</span>
-          <span class="brand__tag">for GSAP</span>
-        </div>
-        <div class="topbar__actions">
-          <button class="btn btn--ghost" type="button" data-action="reset">Reset</button>
-          <button class="btn btn--ghost btn--copy" type="button" data-action="copy-link">Copy link</button>
-        </div>
-      </header>
+  <body class="landing">
+    <header class="nav">
+      <div class="brand">
+        <img class="brand__mark" src="/favicon.svg?v=2" alt="" width="22" height="22" />
+        <span class="brand__name">Motion Lab</span>
+        <span class="brand__tag">for GSAP</span>
+      </div>
+      <div class="nav__actions">
+        <a
+          class="btn btn--ghost nav__github"
+          href="https://github.com/magadnv/gsap-motion-lab"
+          target="_blank"
+          rel="noopener"
+          >GitHub</a
+        >
+        <button class="btn btn--accent" type="button" data-open-lab>Open the lab</button>
+      </div>
+    </header>
 
-      <!-- Left: the controls. Rendered by src/controls.js -->
-      <aside class="panel" aria-label="Animation settings">
-        <form class="panel__form" data-controls autocomplete="off"></form>
-      </aside>
+    <main>
+      <!-- 1. Hero: the promise + a tiny lab to click -->
+      <section class="hero">
+        <div class="hero__text">
+          <p class="eyebrow">Free visual playground for GSAP</p>
+          <h1 class="hero__title" data-reveal-title>Stop guessing eases<span class="dot">.</span></h1>
+          <p class="hero__lead" data-reveal>
+            Move a slider, watch it play, copy clean code. Try five versions in a minute instead of
+            twenty reloads.
+          </p>
+          <div class="hero__actions" data-reveal>
+            <button class="btn btn--accent btn--large" type="button" data-open-lab>
+              Open the lab
+            </button>
+            <span class="hero__note">Free. No sign-up. Runs in your browser.</span>
+          </div>
+        </div>
 
-      <!-- Right: live preview + generated code -->
-      <main class="workspace">
-        <section class="stage" aria-label="Preview">
-          <div class="stage__bar">
-            <span class="label">Preview</span>
-            <div class="stage__actions">
-              <button class="btn btn--ghost" type="button" data-action="play">Play</button>
-              <button class="btn btn--accent" type="button" data-action="replay" title="Replay (R)">Replay</button>
+        <div class="demo" data-reveal aria-label="Try an ease">
+          <div class="demo__bar">
+            <span class="label">Pick an ease</span>
+            <div class="demo__chips" role="radiogroup" aria-label="Ease" data-chips></div>
+          </div>
+          <div class="demo__stage">
+            <div class="demo__boxes" data-demo-boxes>
+              <div class="box"></div>
+              <div class="box"></div>
+              <div class="box"></div>
+              <div class="box"></div>
+              <div class="box"></div>
             </div>
           </div>
-          <!-- In scroll mode the canvas becomes its own scroll container;
-               the spacers give it room to scroll the subject in and out. -->
-          <div class="stage__canvas" data-scroller>
-            <div class="stage__track">
-              <div class="stage__spacer" aria-hidden="true">
-                <span class="stage__hint">Scroll down</span>
-              </div>
-              <div class="stage__subject" data-subject>
-                <div class="boxes" data-boxes>
-                  <div class="box"></div>
-                  <div class="box"></div>
-                  <div class="box"></div>
-                  <div class="box"></div>
-                  <div class="box"></div>
-                </div>
-                <h2 class="headline" data-headline hidden></h2>
-              </div>
-              <div class="stage__spacer" aria-hidden="true"></div>
-            </div>
+          <div class="demo__foot">
+            <div class="demo__curve" data-demo-curve></div>
+            <pre class="demo__code"><code data-demo-code></code></pre>
           </div>
-          <div class="stage__progress" aria-hidden="true"><span data-progress></span></div>
-        </section>
+          <button class="demo__try" type="button" data-try>Try this one in the lab</button>
+        </div>
+      </section>
 
-        <section class="code" aria-label="Generated code">
-          <div class="code__bar">
-            <span class="label">Code</span>
-            <button class="btn btn--ghost btn--copy" type="button" data-action="copy-code">Copy</button>
-          </div>
-          <pre class="code__pre"><code data-code></code></pre>
-        </section>
-      </main>
+      <!-- 2. How it works, in three moves -->
+      <section class="steps-intro" aria-labelledby="how-title">
+        <h2 class="section-title" id="how-title" data-reveal>Three moves.</h2>
+        <ol class="moves">
+          <li class="move" data-reveal>
+            <span class="move__num">01</span>
+            <h3 class="move__title">Tune</h3>
+            <p>A slider for every value, a drawn curve for every ease.</p>
+          </li>
+          <li class="move" data-reveal>
+            <span class="move__num">02</span>
+            <h3 class="move__title">Watch</h3>
+            <p>Every change plays right away. Boxes, words, letters or lines.</p>
+          </li>
+          <li class="move" data-reveal>
+            <span class="move__num">03</span>
+            <h3 class="move__title">Copy</h3>
+            <p>Clean GSAP code, only what you changed. Or send a link that opens the exact animation.</p>
+          </li>
+        </ol>
+      </section>
 
-      <footer class="footer">
-        <span>Built with GSAP</span>
-        <a href="https://madebymaga.de" target="_blank" rel="noopener">madebymaga.de</a>
-      </footer>
-    </div>
+      <!-- 3. The tool itself -->
+      <section class="shot" aria-label="The lab">
+        <figure class="shot__frame" data-reveal>
+          <img
+            src="/lab-screenshot.png"
+            width="1400"
+            height="875"
+            loading="lazy"
+            alt="The lab: controls on the left, a live preview of a split headline on the right, generated GSAP code below"
+          />
+        </figure>
+        <ul class="inside">
+          <li data-reveal><strong>Timeline</strong> Chain up to five steps, overlap them with an offset.</li>
+          <li data-reveal><strong>ScrollTrigger</strong> The preview scrolls, so you can feel start, end and scrub.</li>
+          <li data-reveal><strong>SplitText</strong> Reveal a headline by word, letter or line, with a mask.</li>
+          <li data-reveal><strong>Links</strong> Every setting lives in the URL. Share it with your designer.</li>
+        </ul>
+      </section>
 
-    <!-- Announces "Copied!" to screen readers -->
-    <div class="sr-only" role="status" aria-live="polite" data-announcer></div>
+      <!-- 4. Who it is for -->
+      <section class="for" aria-labelledby="for-title">
+        <h2 class="section-title" id="for-title" data-reveal>Made for the step between Figma and the finished site.</h2>
+        <p class="for__text" data-reveal>
+          The design says <em>smooth, a bit playful.</em> You type an ease, save, reload, squint.
+          Twenty times. Here you compare them side by side, send the link, and paste the one that
+          gets the nod.
+        </p>
+      </section>
 
-    <script type="module" src="/src/main.js"></script>
+      <!-- 5. Close -->
+      <section class="close">
+        <h2 class="close__title" data-reveal>See it first. Then write&nbsp;it<span class="dot">.</span></h2>
+        <button class="btn btn--accent btn--large" type="button" data-open-lab data-reveal>
+          Open the lab
+        </button>
+      </section>
+    </main>
+
+    <footer class="landing-footer">
+      <span>Open source, MIT</span>
+      <a href="https://madebymaga.de" target="_blank" rel="noopener">madebymaga.de</a>
+    </footer>
+
+    <script type="module" src="/src/landing/landing.js"></script>
   </body>
 </html>

@@ -32,6 +32,17 @@
   min-width: 0;
 }
 
+.brand--home {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.brand--home:hover .brand__tag {
+  color: var(--text-muted);
+}
+
 .brand__mark {
   display: block;
   flex: none;

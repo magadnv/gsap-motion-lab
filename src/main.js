@@ -82,6 +82,7 @@ subscribe((state) => {
 bindCopyButton($('[data-action="copy-code"]'), () => generateCode(getState()), announcer);
 bindCopyButton($('[data-action="copy-link"]'), () => shareUrl(getState()), announcer);
 $('[data-action="reset"]').addEventListener("click", resetState);
+$('[data-action="home"]').addEventListener("click", () => (window.location.href = "/"));
 
 // Keyboard: R replays (ignored while typing in a field).
 document.addEventListener("keydown", (event) => {
