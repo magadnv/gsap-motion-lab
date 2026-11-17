@@ -69,8 +69,15 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "r" || event.key === "R") preview.replay();
 });
 
-// First render.
+// First render. With "reduce motion" turned on in the OS, nothing plays
+// by itself on load; every animation after that is one the user asked for.
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const initial = getState();
 render(initial);
-preview.update(initial, { immediate: true });
-document.body.classList.add("is-ready");
+
+// Reveal once the fonts are in (max. 800 ms), so nothing jumps after showing,
+// and only then start the first animation so it isn't missed.
+Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 800))]).then(() => {
+  document.body.classList.add("is-ready");
+  preview.update(getState(), { immediate: true, autoplay: !prefersReducedMotion });
+});

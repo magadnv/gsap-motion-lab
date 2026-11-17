@@ -82,12 +82,25 @@ export function createPreview({ root, progress, playButton, replayButton, onTick
     syncPlayButton();
   }
 
-  /** Rebuild and replay; called on every state change. */
-  function update(state, { immediate = false } = {}) {
+  /** Jump to the end without animating (used for reduced motion on load). */
+  function showEnd() {
+    if (!tween) return;
+    tween.progress(1).pause();
+    setProgress(1);
+    syncPlayButton();
+  }
+
+  /**
+   * Rebuild and replay; called on every state change.
+   * @param {object} state
+   * @param {{ immediate?: boolean, autoplay?: boolean }} [options]
+   */
+  function update(state, { immediate = false, autoplay = true } = {}) {
     clearTimeout(replayTimer);
     const run = () => {
       build(state);
-      replay();
+      if (autoplay) replay();
+      else showEnd();
     };
     if (immediate) run();
     else replayTimer = setTimeout(run, REPLAY_DELAY_MS);
